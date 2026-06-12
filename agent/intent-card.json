@@ -1,0 +1,108 @@
+{
+  "schema": "autobuilder.intent_card.v1",
+  "prd_source": "/home/jsy/wintermute/PRDs/PRD-muster-mcp.md",
+  "intent_slug": "muster-mcp",
+  "root_motivation": "Give any MCP-capable agent a read-only, structured view of the live session population (census + verdict) without exposing the reap kill path — so agents can query 'what sessions are alive' through a connector rather than shelling pgrep.",
+  "user_persona": "Joe Yen, running wintermute on Arch Linux; self-review and build-tick agents connect via MCP connector and need session population data without manual subprocess plumbing.",
+  "unfakeable_metric": {
+    "name": "acceptance_tests_passing",
+    "lower_is_better": false,
+    "harness_command": "cargo test --workspace 2>&1 | grep -E '^test result' | awk '{print $4}'",
+    "target": 7
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC1",
+      "level": "MUST",
+      "description": "cargo build --release produces muster-mcp; cargo test green; MSRV 1.85, no let-chains; sigpipe::reset() first in main().",
+      "test": "tests/acceptance_ac1.rs — build succeeds, test suite green"
+    },
+    {
+      "id": "AC2",
+      "level": "MUST",
+      "description": "muster-mcp serve completes initialize and tools/list returns exactly the two read tools (sessions_census, sessions_verdict) with valid JSON-Schema inputSchema.",
+      "test": "tests/acceptance_ac2.rs — serve roundtrip with initialize + tools/list"
+    },
+    {
+      "id": "AC3",
+      "level": "MUST",
+      "description": "Read-only by construction: a test asserts the backend verb set ⊆ {census, verdict} and a guard rejects 'reap' appearing as a subcommand literal anywhere in command construction.",
+      "test": "tests/acceptance_ac3.rs — verb allowlist + reap absent check"
+    },
+    {
+      "id": "AC4",
+      "level": "MUST",
+      "description": "sessions_verdict invokes 'muster verdict --format json' and returns the parsed JSON (verified against a stubbed muster binary on PATH; offline).",
+      "test": "tests/acceptance_ac4.rs — stub muster binary, check verdict output"
+    },
+    {
+      "id": "AC5",
+      "level": "MUST",
+      "description": "A tools/call naming an unregistered tool (e.g. sessions_reap) yields a JSON-RPC error, not a shell call — proving reap is unreachable.",
+      "test": "tests/acceptance_ac5.rs — unknown tool call returns -32601 error"
+    },
+    {
+      "id": "AC6",
+      "level": "MUST",
+      "description": "--muster-bin/MUSTER_BIN redirects to a fixture script; absent a usable binary, serve starts and tool calls return a clean ToolError.",
+      "test": "tests/acceptance_ac6.rs — env override + missing binary graceful error"
+    },
+    {
+      "id": "AC7",
+      "level": "MUST",
+      "description": "README documents the two tools, that reap is intentionally excluded, and an MCP client config snippet; no settings.json edits performed.",
+      "test": "Manual: README.md contains reap exclusion mention and config snippet"
+    }
+  ],
+  "scope": [
+    "Binary crate muster-mcp serving two MCP tools: sessions_census and sessions_verdict",
+    "Backend shells the installed muster binary with allowlisted verb literals + --format json",
+    "Clap CLI: muster-mcp serve [--muster-bin <path>]",
+    "MUSTER_BIN env var override",
+    "JSON-RPC 2.0 stdio MCP server via mcp-core"
+  ],
+  "non_goals": [
+    "Exposing muster reap over MCP — intentionally excluded",
+    "Implementing muster logic directly (shells the binary)",
+    "Any write/mutation operations",
+    "Network transport (stdio only)",
+    "Authentication or authorization",
+    "settings.json modifications"
+  ],
+  "hard_constraints": {
+    "rust_edition": "2021",
+    "target_kind": "cli",
+    "deny_unsafe": true,
+    "msrv": "1.85",
+    "max_deps": null,
+    "additional": {
+      "no_let_chains": true,
+      "sigpipe_reset_first": true,
+      "path_dep_mcp_core": "../mcp-core"
+    }
+  },
+  "five_whys_trace": [
+    {
+      "why": 1,
+      "q": "Why expose muster over MCP?",
+      "a": "Agents (self-review, build-tick) currently guess at session population via pgrep — they need structured, attributable census+verdict data."
+    },
+    {
+      "why": 2,
+      "q": "Why not call muster directly from agent code?",
+      "a": "Agents run through MCP connectors; a real MCP server means any connector-aware agent can query without per-agent subprocess plumbing."
+    },
+    {
+      "why": 3,
+      "q": "Why exclude reap from the MCP surface?",
+      "a": "Reap kills sessions; MCP here is an inspection surface. Keeping kill off the connector is a safety invariant — an agent can see but never act."
+    }
+  ],
+  "ambiguities_resolved": [
+    {
+      "question": "Should sessions_census and sessions_verdict accept parameters (e.g. filters)?",
+      "resolution": "Both are no-arg per the PRD — inputSchema is an empty object. Parameters are a follow-on PRD concern."
+    }
+  ],
+  "created_at": "2026-06-11T00:00:00Z"
+}

@@ -1,0 +1,11 @@
+{
+  "schema": "autobuilder.evidence_pack.v1",
+  "receipt_kind": "intake",
+  "sha": "9f0e75b46755f0640c9a91f3d67f332701e3e870",
+  "timestamp": "2026-06-12T05:16:40Z",
+  "status": "pass",
+  "intent_slug": "muster-mcp",
+  "prd_source": "/home/jsy/wintermute/PRDs/PRD-muster-mcp.md",
+  "must_acs": ["AC1","AC2","AC3","AC4","AC5","AC6","AC7"],
+  "notes": "intent-card.json written and validated against schema"
+}

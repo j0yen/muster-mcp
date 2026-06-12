@@ -3,7 +3,7 @@
 //! Only `census` and `verdict` are reachable. `reap` and any other verb
 //! are structurally absent from this module.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{Context, Result};
@@ -24,17 +24,17 @@ pub struct MusterCli {
 impl MusterCli {
     /// Create a `MusterCli` that uses the given binary path.
     pub fn new(bin: impl Into<PathBuf>) -> Self {
-        MusterCli { bin: bin.into() }
+        Self { bin: bin.into() }
     }
 
     /// Create a `MusterCli` resolving `muster` from `$PATH`.
     pub fn from_path() -> Self {
-        MusterCli::new("muster")
+        Self::new("muster")
     }
 
     /// Return the binary path (read-only access for tests).
     #[cfg(test)]
-    pub fn bin(&self) -> &Path {
+    pub fn bin(&self) -> &std::path::Path {
         &self.bin
     }
 
@@ -60,12 +60,11 @@ impl MusterCli {
 
     /// Internal: run an allowlisted verb.
     fn run_verb(&self, verb: &str) -> Result<Value> {
-        // Safety: verb is always one of the ALLOWED_VERBS literals called from
+        // verb is always one of the ALLOWED_VERBS literals called from
         // census() / verdict(). The public API has no way to pass an arbitrary verb.
-        assert!(
-            ALLOWED_VERBS.contains(&verb),
-            "BUG: verb '{verb}' not in allowlist"
-        );
+        if !ALLOWED_VERBS.contains(&verb) {
+            anyhow::bail!("BUG: verb '{verb}' not in allowlist — this is a programming error");
+        }
 
         let output = Command::new(&self.bin)
             .arg(verb)
@@ -89,19 +88,16 @@ impl MusterCli {
     }
 }
 
-/// Confirm that the verb set reachable from this module is ⊆ {census, verdict}.
-///
-/// This is a compile-time-verifiable invariant: the only public methods that
-/// invoke the binary are `census()` and `verdict()`, both of which pass a
-/// literal string through `ALLOWED_VERBS`. The `reap` subcommand has no
-/// representation here.
-pub fn allowed_verbs() -> &'static [&'static str] {
-    ALLOWED_VERBS
-}
-
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use super::*;
+
+    /// Return the allowed verb list for test inspection.
+    pub(super) fn allowed_verbs() -> &'static [&'static str] {
+        ALLOWED_VERBS
+    }
 
     #[test]
     fn verb_allowlist_is_read_only() {

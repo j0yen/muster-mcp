@@ -25,16 +25,21 @@ pub struct SessionsCensus {
 
 impl SessionsCensus {
     /// Create a new `SessionsCensus` tool backed by the given `MusterCli`.
-    pub fn new(cli: MusterCli) -> Self {
-        SessionsCensus { cli }
+    pub const fn new(cli: MusterCli) -> Self {
+        Self { cli }
     }
 }
 
 impl Tool for SessionsCensus {
+    // Trait is defined with `&str`; our impl returns `&'static str` (valid sub-type).
+    // clippy::unnecessary_literal_bound fires on the trait impl, not the trait
+    // definition — suppress here since we can't change the upstream trait.
+    #[allow(clippy::unnecessary_literal_bound)]
     fn name(&self) -> &str {
         "sessions_census"
     }
 
+    #[allow(clippy::unnecessary_literal_bound)]
     fn description(&self) -> &str {
         "Enumerate live Claude sessions with origin attribution and bus reconciliation. \
          Read-only. Equivalent to `muster census --format json`."
@@ -62,16 +67,18 @@ pub struct SessionsVerdict {
 
 impl SessionsVerdict {
     /// Create a new `SessionsVerdict` tool backed by the given `MusterCli`.
-    pub fn new(cli: MusterCli) -> Self {
-        SessionsVerdict { cli }
+    pub const fn new(cli: MusterCli) -> Self {
+        Self { cli }
     }
 }
 
 impl Tool for SessionsVerdict {
+    #[allow(clippy::unnecessary_literal_bound)]
     fn name(&self) -> &str {
         "sessions_verdict"
     }
 
+    #[allow(clippy::unnecessary_literal_bound)]
     fn description(&self) -> &str {
         "Annotate the live-session census with live/duplicate/orphan/stale verdicts \
          and supporting evidence. Read-only. Equivalent to `muster verdict --format json`."

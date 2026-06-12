@@ -1,0 +1,12 @@
+{
+  "schema": "autobuilder.evidence_pack.v1",
+  "receipt_kind": "proof-receipt",
+  "sha": "9f0e75b46755f0640c9a91f3d67f332701e3e870",
+  "timestamp": "2026-06-12T05:16:40Z",
+  "status": "pass",
+  "cargo_check": "exit 0",
+  "cargo_clippy": "exit 0 (-D warnings)",
+  "cargo_test": "exit 0 (17 tests: 6 unit + 1 AC2 + 3 AC3 + 2 AC4 + 2 AC5 + 3 AC6)",
+  "cargo_build_release": "exit 0",
+  "deny_unsafe": true
+}

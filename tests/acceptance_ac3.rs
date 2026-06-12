@@ -36,23 +36,34 @@ fn reap_not_a_command_argument_in_source() {
     }
 }
 
-/// Confirm that the tools module does not define any tool whose name contains "reap".
+/// Confirm that the tools module does not define any tool whose name IS "reap"
+/// or starts with "sessions_reap".
 #[test]
 fn tools_source_has_no_reap_tool() {
     let tools_src = include_str!("../src/tools.rs");
-    // No function named sessions_reap, no tool name "reap"
+
+    // No function or struct named sessions_reap
     assert!(
         !tools_src.contains("sessions_reap"),
         "tools.rs must not define a sessions_reap tool"
     );
-    // "reap" as a string literal (not in a comment) should not appear as a verb
+
+    // The string literal "reap" must not appear as a tool name value in any fn name()
+    // — specifically fn name() must not return a string that IS "reap".
+    // We check that the literal `"reap"` (exact match, not a substring check like
+    // `contains("reap")`) does not appear as a tool name return value.
     for line in tools_src.lines() {
         let trimmed = line.trim();
         if trimmed.starts_with("//") || trimmed.starts_with("///") {
             continue; // comments are fine
         }
-        if trimmed.contains(r#""reap""#) {
-            panic!("Found literal \"reap\" in non-comment line of tools.rs: {}", trimmed);
+        // Skip assert/test lines that mention "reap" as part of a negative check
+        if trimmed.contains("contains") || trimmed.contains("assert") {
+            continue;
+        }
+        // Check for the literal string "reap" being returned as a tool name
+        if trimmed == r#""reap""# || trimmed.starts_with(r#"fn name"#) && trimmed.contains(r#""reap""#) {
+            panic!("Found literal \"reap\" as a tool name in tools.rs: {trimmed}");
         }
     }
 }

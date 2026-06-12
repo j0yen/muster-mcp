@@ -1,0 +1,12 @@
+{
+  "schema": "autobuilder.evidence_pack.v1",
+  "receipt_kind": "rollback-plan",
+  "sha": "9f0e75b46755f0640c9a91f3d67f332701e3e870",
+  "timestamp": "2026-06-12T05:16:40Z",
+  "status": "pass",
+  "steps": [
+    "git -C ~/wintermute/muster-mcp revert HEAD --no-commit",
+    "cargo build --release to verify revert compiles",
+    "git commit or git reset --hard HEAD to complete rollback"
+  ]
+}

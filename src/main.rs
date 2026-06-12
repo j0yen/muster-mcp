@@ -63,10 +63,9 @@ fn main() -> Result<()> {
 
     match cli.command {
         Commands::Serve(args) => {
-            let muster_cli = match args.muster_bin {
-                Some(bin) => MusterCli::new(bin),
-                None => MusterCli::from_path(),
-            };
+            let muster_cli = args
+                .muster_bin
+                .map_or_else(MusterCli::from_path, MusterCli::new);
 
             let tools: Vec<Box<dyn mcp_core::Tool>> = vec![
                 Box::new(SessionsCensus::new(muster_cli.clone())),

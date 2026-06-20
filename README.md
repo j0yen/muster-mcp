@@ -1,48 +1,46 @@
 # muster-mcp
 
-Live-session census as a read-only MCP server.
+A read-only MCP server that lets an agent see the live wintermute session roster — and only see it. The kill path is deliberately not exposed.
 
-`muster-mcp` exposes two MCP tools that let any MCP-capable agent query the
-current wintermute session population — without exposing the kill path.
+## Why it exists
+
+`muster` is the tool that counts live Claude sessions and judges them: which are real, which are duplicates, which are orphaned or stale, and which should be reaped. An agent that could read that census could coordinate; an agent that could act on it could terminate its siblings. Those are different privileges, and they should not arrive together.
+
+`muster-mcp` separates them. It exposes the inspection half of `muster` over MCP and leaves `reap` behind. Any MCP-capable agent can ask who is running and how each session looks, but the decision to kill stays human-gated. The server is a window, not a lever.
 
 ## Tools
 
 ### `sessions_census`
 
-Enumerates live Claude sessions with origin attribution and bus reconciliation.
-Equivalent to running `muster census --format json`.
+Enumerates live Claude sessions with origin attribution and bus reconciliation — the equivalent of `muster census --format json`.
 
-- **Input**: no arguments (empty object `{}`)
-- **Output**: JSON array of session objects with PID, origin, and bus state
+- **Input**: none (empty object `{}`)
+- **Output**: a JSON array of session objects with PID, origin, and bus state.
 
 ### `sessions_verdict`
 
-Annotates the live-session census with `live`, `duplicate`, `orphan`, or `stale`
-verdicts plus supporting evidence. Equivalent to running `muster verdict --format json`.
+Annotates the census with a `live`, `duplicate`, `orphan`, or `stale` verdict plus the evidence behind it — the equivalent of `muster verdict --format json`.
 
-- **Input**: no arguments (empty object `{}`)
-- **Output**: JSON array of session objects with verdict and evidence fields
+- **Input**: none (empty object `{}`)
+- **Output**: a JSON array of session objects with verdict and evidence fields.
 
-### Why `reap` is excluded
+`reap` is not here, and that is the point. It kills sessions; exposing it over MCP would let any connected agent end a session on its own. An agent using `muster-mcp` sees the roster but never acts on it.
 
-`muster reap` kills sessions. This server is an **inspection surface only**.
-Exposing reap over MCP would allow any connected agent to terminate sessions
-autonomously — which violates the principle that kill paths must remain
-human-gated. An agent using `muster-mcp` can see the roster but never act on it.
-
-## Usage
+## Run
 
 ```sh
 # Start the MCP server on stdio
 muster-mcp serve
 
-# Use a custom muster binary (also: MUSTER_BIN=/path/to/muster)
+# Point it at a specific muster binary (or set MUSTER_BIN)
 muster-mcp serve --muster-bin /usr/local/bin/muster
 ```
 
+The server shells out to the `muster` binary, so `muster` must be on `$PATH` — or named via `--muster-bin` / the `MUSTER_BIN` environment variable.
+
 ## MCP client configuration
 
-Add to your MCP client config (e.g. Claude Code `.mcp.json`):
+Add to your client config (for Claude Code, `.mcp.json`):
 
 ```json
 {
@@ -55,7 +53,7 @@ Add to your MCP client config (e.g. Claude Code `.mcp.json`):
 }
 ```
 
-Or with a custom binary path:
+With a custom binary path:
 
 ```json
 {
@@ -68,18 +66,19 @@ Or with a custom binary path:
 }
 ```
 
-## Dependencies
+## Where it fits
 
-- `muster` binary must be on `$PATH` (or specified via `--muster-bin` / `MUSTER_BIN`)
-- `mcp-core` (path dependency, part of the wintermute workspace)
-
-## Building
+`muster-mcp` is the MCP surface over `muster`, part of the wintermute fleet's session-management layer. It depends on `mcp-core` (the fleet's shared MCP stdio scaffolding) as a workspace path dependency, so it builds inside the wintermute workspace rather than standalone from a bare clone:
 
 ```sh
-cargo build --release
+cargo build --release   # within the wintermute workspace
 # Binary at: target/release/muster-mcp
 ```
 
+## Status
+
+v0.1. Two tools, both read-only, both thin wrappers over `muster`'s JSON output.
+
 ## License
 
-MIT OR Apache-2.0 — Joe Yen
+MIT OR Apache-2.0 — Joe Yen.
